@@ -27,7 +27,12 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event):
+    """
+        Handles incoming events and extracts Textract job information from the SNS message.
 
+        :param event: The incoming event containing SNS data.
+        :return: None
+        """
     print("Received event: " + json.dumps(event))
     
     for record in event['Records']:
@@ -50,6 +55,12 @@ def lambda_handler(event):
 
 
 def get_job_results(jobId):
+    """
+        Retrieves the Textract job results by job ID.
+
+        :param jobId: The Textract job ID.
+        :return: A list of document analysis results.
+        """
     texttract_client = get_client('textract', 'us-east-1')
     blocks = []
     analysis = {}
@@ -135,7 +146,12 @@ def get_job_results(jobId):
     
     
 def process_request(request):
-    
+    """
+        Processes a Textract job request and stores the results in S3 and DynamoDB.
+
+        :param request: A dictionary containing job details.
+        :return: A response containing the status code and body.
+        """
     s3_client = get_client('s3', 'us-east-1')
 
     print("Request : {}".format(request))
@@ -179,6 +195,13 @@ def process_request(request):
 
 
 def find_value_block(key_block, value_map):
+    """
+        Finds the value block corresponding to a given key block.
+
+        :param key_block: The key block to search for.
+        :param value_map: A map of value blocks.
+        :return: The corresponding value block.
+        """
     for relationship in key_block['Relationships']:
         if relationship['Type'] == 'VALUE':
             for value_id in relationship['Ids']:
@@ -187,6 +210,13 @@ def find_value_block(key_block, value_map):
 
 
 def get_text(result, blocks_map):
+    """
+        Extracts text from a block result using a provided block map.
+
+        :param result: The block result to extract text from.
+        :param blocks_map: A map of blocks.
+        :return: The extracted text.
+        """
     text = ''
     if 'Relationships' in result:
         for relationship in result['Relationships']:
@@ -202,12 +232,16 @@ def get_text(result, blocks_map):
     return text
 
 
-def find_key_value_inrange(response, top, bottom, thisPage) :
-# given Textract Response, and [top,bottom] - bounding box need to search for
-# find Key:value pairs within the bounding box 
+def find_key_value_inrange(response, top, bottom, thisPage):
+    """
+        Finds key-value pairs within a specified bounding box in the Textract response.
 
-    #get key_map,value_map,block_map from response (textract JSON)
-    
+        :param response: The Textract response containing blocks.
+        :param top: The top coordinate of the bounding box.
+        :param bottom: The bottom coordinate of the bounding box.
+        :param thisPage: The page number to search on.
+        :return: A dictionary of key-value pairs found in the range.
+        """
     blocks=response['Blocks']
     key_map = {}
     value_map = {}
@@ -235,6 +269,13 @@ def find_key_value_inrange(response, top, bottom, thisPage) :
 
 
 def get_rows_columns_map(table_result, blocks_map):
+    """
+        Maps rows and columns from a table block result.
+
+        :param table_result: The table block result.
+        :param blocks_map: A map of blocks.
+        :return: A dictionary mapping row indices to column values.
+        """
     rows = {}
     for relationship in table_result['Relationships']:
         if relationship['Type'] == 'CHILD':
@@ -250,7 +291,15 @@ def get_rows_columns_map(table_result, blocks_map):
 
 
 def get_tables_from_json_inrange(response, top, bottom, thisPage):
-#given respones and top/bottom corrdinate, return tables in the range
+    """
+        Retrieves tables within a specified bounding box in the Textract response.
+
+        :param response: The Textract response containing blocks.
+        :param top: The top coordinate of the bounding box.
+        :param bottom: The bottom coordinate of the bounding box.
+        :param thisPage: The page number to search on.
+        :return: A list of tables found in the range.
+        """
     blocks=response['Blocks']
     blocks_map = {}
     table_blocks = []
@@ -280,8 +329,16 @@ def get_tables_from_json_inrange(response, top, bottom, thisPage):
     
     
 ### get tables coordinate in range:
-def get_tables_coord_inrange(response,top,bottom,thisPage):  
-#given respones and top/bottom corrdinate, return tables in the range
+def get_tables_coord_inrange(response,top,bottom,thisPage):
+    """
+        Retrieves the coordinates of tables within a specified bounding box in the Textract response.
+
+        :param response: The Textract response containing blocks.
+        :param top: The top coordinate of the bounding box.
+        :param bottom: The bottom coordinate of the bounding box.
+        :param thisPage: The page number to search on.
+        :return: A list of table coordinates found in the range.
+        """
     blocks=response['Blocks']
     blocks_map = {}
     table_blocks = []
@@ -305,9 +362,13 @@ def get_tables_coord_inrange(response,top,bottom,thisPage):
 
 
 def box_within_box(box1,box2):
-# check if bounding box1 is completely within bounding box2
-# box1:{Width,Height,Left,Top}
-# box2:{Width,Height,Left,Top}
+    """
+        Checks if one bounding box is completely within another bounding box.
+
+        :param box1: The first bounding box.
+        :param box2: The second bounding box.
+        :return: True if box1 is within box2, otherwise False.
+        """
     if box1['Top']>= box2['Top'] and box1['Left']>=box2['Left'] and box1['Top']+box1['Height']<=box2['Top']+box2['Height'] and box1['Left']+box1['Width']<=box2['Left']+box2['Width'] : 
         return True 
     else:
@@ -315,10 +376,15 @@ def box_within_box(box1,box2):
 
 
 def find_Key_value_inrange_notInTable(response,top,bottom,thisPage) :
-# given Textract Response, and [top,bottom] - bounding box need to search for
-# find Key:value pairs within the bounding box 
+    """
+        Finds key-value pairs within a specified bounding box that are not in a table.
 
-    #get key_map,value_map,block_map from response (textract JSON)
+        :param response: The Textract response containing blocks.
+        :param top: The top coordinate of the bounding box.
+        :param bottom: The bottom coordinate of the bounding box.
+        :param thisPage: The page number to search on.
+        :return: A dictionary of key-value pairs found in the range.
+        """
     blocks=response['Blocks']
     key_map = {}
     value_map = {}
@@ -359,9 +425,13 @@ def find_Key_value_inrange_notInTable(response,top,bottom,thisPage) :
 ### function: take response of multi-page Textract, and page_number
 ### return order sequence JSON for that page Text1->KV/Table->Text2->KV/Table..
 def parsejson_inorder_perpage(response,thisPage):
-# input: response - multipage Textract response JSON
-#        thisPage - page number : 1,2,3.. 
-# output: clean parsed JSON for this Page in correct order 
+    """
+        Parses the Textract response for a specific page and returns the text in order.
+
+        :param response: The Textract response containing blocks.
+        :param thisPage: The page number to parse.
+        :return: A list of dictionaries representing the parsed text and associated key-value pairs and tables.
+        """
         ID_list_KV_Table=[]
         for block in response['Blocks']:
             if block['Page'] == thisPage:
@@ -432,7 +502,15 @@ def parsejson_inorder_perpage(response,thisPage):
 
 
 def _write_to_dynamo_db(dd_table_name, Id, fullFilePath, fullPdfJson):
+    """
+        Writes data to a DynamoDB table, creating the table if it does not exist.
 
+        :param dd_table_name: The name of the DynamoDB table.
+        :param Id: The ID to use as the primary key.
+        :param fullFilePath: The full file path of the PDF.
+        :param fullPdfJson: The JSON representation of the PDF data.
+        :return: None
+        """
     # Get the service resource.
     dynamodb = get_resource('dynamodb')
 
@@ -526,6 +604,12 @@ def _write_to_dynamo_db(dd_table_name, Id, fullFilePath, fullPdfJson):
 
 
 def dict_to_item(raw):
+    """
+        Converts a Python dictionary or primitive types to a format suitable for DynamoDB.
+
+        :param raw: The input data, which can be a dictionary, string, or integer.
+        :return: A dictionary formatted for DynamoDB, where strings are mapped to 'S' and integers to 'I'.
+        """
     if type(raw) is dict:
         resp = {}
         for k,v in raw.items():
@@ -558,6 +642,13 @@ def dict_to_item(raw):
 
            
 def get_client(name, awsRegion=None):
+    """
+        Creates a Boto3 client for a specified AWS service.
+
+        :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
+        :param awsRegion: The AWS region to connect to (optional).
+        :return: A Boto3 client for the specified service.
+        """
     config = Config(
         retries = dict(
             max_attempts = 30
@@ -570,6 +661,13 @@ def get_client(name, awsRegion=None):
 
 
 def get_resource(name, awsRegion=None):
+    """
+        Creates a Boto3 resource for a specified AWS service.
+
+        :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
+        :param awsRegion: The AWS region to connect to (optional).
+        :return: A Boto3 resource for the specified service.
+        """
     config = Config(
         retries = dict(
             max_attempts = 30

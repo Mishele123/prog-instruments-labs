@@ -7,6 +7,12 @@ from botocore.client import Config
 
 
 def pdf_format(file):
+    """
+        Formats a PDF file by reading its content and adding custom metadata.
+
+        :param file: The path to the PDF file to be formatted.
+        :return: The path to the newly formatted PDF file.
+        """
     fin = open(file, 'rb')
     reader = PdfFileReader(fin)
     writer = PdfFileWriter()
@@ -25,6 +31,13 @@ def pdf_format(file):
 
 
 def lambda_handler(event):
+    """
+        AWS Lambda function handler that processes S3 events to format PDF files
+        and start a Textract job.
+
+        :param event: The event data received from S3.
+        :return: A response indicating the status of the processing.
+        """
     print('Received event is ', json.dumps(event, indent=2))
     # Set directory for preprocessing PDFs
     os.chdir('/tmp/')
@@ -79,6 +92,13 @@ def lambda_handler(event):
 
 
 def get_client(name, awsRegion=None):
+    """
+        Creates a Boto3 client for a specified AWS service.
+
+        :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
+        :param awsRegion: The AWS region to connect to (optional).
+        :return: A Boto3 client for the specified service.
+        """
     config = Config(
         retries = dict(
             max_attempts = 30
@@ -91,6 +111,13 @@ def get_client(name, awsRegion=None):
 
 
 def get_resource(name, awsRegion=None):
+    """
+        Creates a Boto3 resource for a specified AWS service.
+
+        :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
+        :param awsRegion: The AWS region to connect to (optional).
+        :return: A Boto3 resource for the specified service.
+        """
     config = Config(
         retries = dict(
             max_attempts = 30
