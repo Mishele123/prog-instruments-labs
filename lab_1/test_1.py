@@ -45,8 +45,8 @@ def lambda_handler(event):
         print(record)
         # Extract keys from event
         bucket = record['s3']['bucket']['name']
-        urlKey = record['s3']['object']['key']
-        key = unquote(urlKey).replace('+',' ')
+        url_key = record['s3']['object']['key']
+        key = unquote(url_key).replace('+',' ')
         key_list = key.split('/')
         # Define original directory in S3
         directories = ''
@@ -91,12 +91,12 @@ def lambda_handler(event):
     }
 
 
-def get_client(name, awsRegion=None):
+def get_client(name, aws_region=None):
     """
         Creates a Boto3 client for a specified AWS service.
 
         :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
-        :param awsRegion: The AWS region to connect to (optional).
+        :param aws_region: The AWS region to connect to (optional).
         :return: A Boto3 client for the specified service.
         """
     config = Config(
@@ -104,18 +104,18 @@ def get_client(name, awsRegion=None):
             max_attempts = 30
         )
     )
-    if(awsRegion):
-        return boto3.client(name, region_name=awsRegion, config=config)
+    if(aws_region):
+        return boto3.client(name, region_name=aws_region, config=config)
     else:
         return boto3.client(name, config=config) 
 
 
-def get_resource(name, awsRegion=None):
+def get_resource(name, aws_region=None):
     """
         Creates a Boto3 resource for a specified AWS service.
 
         :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
-        :param awsRegion: The AWS region to connect to (optional).
+        :param aws_region: The AWS region to connect to (optional).
         :return: A Boto3 resource for the specified service.
         """
     config = Config(
@@ -124,7 +124,7 @@ def get_resource(name, awsRegion=None):
         )
     )
 
-    if(awsRegion):
-        return boto3.resource(name, region_name=awsRegion, config=config)
+    if(aws_region):
+        return boto3.resource(name, region_name=aws_region, config=config)
     else:
         return boto3.resource(name, config=config)

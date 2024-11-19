@@ -81,14 +81,14 @@ def get_job_results(jobId):
     analysis.pop("NextToken", None)
     analysis["Blocks"] = blocks
     
-    Total_Pages=response['DocumentMetadata']['Pages']
-    finalJSON_allpage=[]
-    print(Total_Pages)
-    for i in range(Total_Pages):
-        thisPage=i+1
-        thisPage_json=parsejson_inorder_perpage(analysis,thisPage)
-        finalJSON_allpage.append({'Page':thisPage,'Content':thisPage_json})
-        print(f"Page {thisPage} parsed")
+    total_pages=response['DocumentMetadata']['Pages']
+    final_json_allpage=[]
+    print(total_pages)
+    for i in range(total_pages):
+        this_page=i+1
+        this_page_json=parsejson_inorder_perpage(analysis,this_page)
+        final_json_allpage.append({'Page':this_page,'Content':this_page_json})
+        print(f"Page {this_page} parsed")
 
     # blocks = []
     # analysis = {}
@@ -142,7 +142,7 @@ def get_job_results(jobId):
 
     # print('The resulting json is {}'.format(finalJSON_allpage))
 
-    return finalJSON_allpage
+    return final_json_allpage
     
     
 def process_request(request):
@@ -156,8 +156,8 @@ def process_request(request):
 
     print("Request : {}".format(request))
 
-    jobId = request['jobId']
-    jobAPI = request['jobAPI']
+    job_id = request['jobId']
+    job_api = request['jobAPI']
     bucketName = request['bucketName']
     outputBucketName = request['outputBucketName']
     objectName = request['objectName']
@@ -176,7 +176,7 @@ def process_request(request):
     
     upload_path = upload_path + file_name_no_ext + '/textract/'
     
-    finalJSON_allpage = get_job_results(jobAPI, jobId)
+    finalJSON_allpage = get_job_results(job_api, job_id)
     
     analyses_bucket_name = outputBucketName
     analyses_bucket_key = "{}".format(objectName.replace('.PDF', '.json'))
@@ -432,7 +432,7 @@ def parsejson_inorder_perpage(response,thisPage):
         :param thisPage: The page number to parse.
         :return: A list of dictionaries representing the parsed text and associated key-value pairs and tables.
         """
-        ID_list_KV_Table=[]
+        id_list_kv_table=[]
         for block in response['Blocks']:
             if block['Page'] == thisPage:
                 if block['BlockType']=='TABLE' or block['BlockType']=='CELL' or \
@@ -440,8 +440,8 @@ def parsejson_inorder_perpage(response,thisPage):
                    block['BlockType']=='SELECTION_ELEMENT' :
 
                     kv_id=block['Id']
-                    if kv_id not in ID_list_KV_Table:
-                        ID_list_KV_Table.append(kv_id)
+                    if kv_id not in id_list_kv_table:
+                        id_list_kv_table.append(kv_id)
 
                     child_idlist=[]
                     if 'Relationships' in block.keys():
@@ -449,9 +449,9 @@ def parsejson_inorder_perpage(response,thisPage):
                             child_idlist.append(child['Ids'])
                         flat_child_idlist = [item for sublist in child_idlist for item in sublist]
                         for childid in flat_child_idlist:
-                            if childid not in ID_list_KV_Table:
-                                ID_list_KV_Table.append(childid)
-        TextList=[]
+                            if childid not in id_list_kv_table:
+                                id_list_kv_table.append(childid)
+        text_list=[]
         for block in response['Blocks']:
             if block['Page'] == thisPage:
                 if block['BlockType'] == 'LINE':
@@ -466,49 +466,49 @@ def parsejson_inorder_perpage(response,thisPage):
                         for childid in flat_child_idlist:
                             thisline_idlist.append(childid)
 
-                    setLineID=set(thisline_idlist)
-                    setAllKVTableID=set(ID_list_KV_Table)
-                    if len(setLineID.intersection(setAllKVTableID)) == 0:
+                    set_line_id=set(thisline_idlist)
+                    set_all_kv_table_id=set(id_list_kv_table)
+                    if len(set_line_id.intersection(set_all_kv_table_id)) == 0:
              #           print(block['Text'])
-                        thisDict={'Line':block['Text'],
+                        this_dict={'Line':block['Text'],
                                   'Left':block['Geometry']['BoundingBox']['Left'],
                                   'Top':block['Geometry']['BoundingBox']['Top'],
                                   'Width':block['Geometry']['BoundingBox']['Width'],
                                   'Height':block['Geometry']['BoundingBox']['Height']}
              #           print(thisDict)
-                        TextList.append(thisDict)
+                        text_list.append(this_dict)
 
-        finalJSON=[]
-        for i in range(len(TextList)-1):
-            thisText=TextList[i]['Line']
-            thisTop=TextList[i]['Top']
-            thisBottom=TextList[i+1]['Top']+TextList[i+1]['Height']
+        final_json=[]
+        for i in range(len(text_list)-1):
+            this_text=text_list[i]['Line']
+            this_top=text_list[i]['Top']
+            thisBottom=text_list[i+1]['Top']+text_list[i+1]['Height']
  #           thisText_KV=find_Key_value_inrange_notInTable(response,thisTop,thisBottom,thisPage)
-            thisText_KV=find_key_value_inrange(response, thisTop, thisBottom, thisPage)
-            thisText_Table=get_tables_from_json_inrange(response, thisTop, thisBottom, thisPage)
-            finalJSON.append({thisText:{'KeyValue':thisText_KV,'Tables':thisText_Table}})
+            this_text_kv=find_key_value_inrange(response, this_top, thisBottom, thisPage)
+            this_text_table=get_tables_from_json_inrange(response, this_top, thisBottom, thisPage)
+            final_json.append({this_text:{'KeyValue':this_text_kv,'Tables':this_text_table}})
 
-        if (len(TextList) > 0):
+        if (len(text_list) > 0):
             ## last line Text to bottom of page:
-            lastText=TextList[len(TextList)-1]['Line']
-            lastTop=TextList[len(TextList)-1]['Top']
-            lastBottom=1
+            last_text=text_list[len(text_list)-1]['Line']
+            last_top=text_list[len(text_list)-1]['Top']
+            last_bottom=1
      #       thisText_KV=find_Key_value_inrange_notInTable(response,lastTop,lastBottom,thisPage)
-            thisText_KV=find_key_value_inrange(response, lastTop, lastBottom, thisPage)
-            thisText_Table=get_tables_from_json_inrange(response, lastTop, lastBottom, thisPage)
-            finalJSON.append({lastText:{'KeyValue':thisText_KV,'Tables':thisText_Table}})
+            this_text_kv=find_key_value_inrange(response, last_top, last_bottom, thisPage)
+            this_text_table=get_tables_from_json_inrange(response, last_top, last_bottom, thisPage)
+            final_json.append({last_text:{'KeyValue':this_text_kv,'Tables':this_text_table}})
 
-        return finalJSON
+        return final_json
 
 
-def _write_to_dynamo_db(dd_table_name, Id, fullFilePath, fullPdfJson):
+def _write_to_dynamo_db(dd_table_name, id, full_file_path, full_pdf_json):
     """
         Writes data to a DynamoDB table, creating the table if it does not exist.
 
         :param dd_table_name: The name of the DynamoDB table.
-        :param Id: The ID to use as the primary key.
-        :param fullFilePath: The full file path of the PDF.
-        :param fullPdfJson: The JSON representation of the PDF data.
+        :param id: The ID to use as the primary key.
+        :param full_file_path: The full file path of the PDF.
+        :param full_pdf_json: The JSON representation of the PDF data.
         :return: None
         """
     # Get the service resource.
@@ -579,10 +579,10 @@ def _write_to_dynamo_db(dd_table_name, Id, fullFilePath, fullPdfJson):
     try :
         table.put_item(Item=
             {
-                'Id': Id, 
-                'FilePath': fullFilePath, 
-                'PdfJsonRegularFormat': str(fullPdfJson),
-                'PdfJsonDynamoFormat': fullPdfJson,
+                'Id': id,
+                'FilePath': full_file_path,
+                'PdfJsonRegularFormat': str(full_pdf_json),
+                'PdfJsonDynamoFormat': full_pdf_json,
                 'DateTime': datetime.datetime.utcnow().isoformat(),
             }
         )
@@ -641,12 +641,12 @@ def dict_to_item(raw):
         }
 
            
-def get_client(name, awsRegion=None):
+def get_client(name, aws_region=None):
     """
         Creates a Boto3 client for a specified AWS service.
 
         :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
-        :param awsRegion: The AWS region to connect to (optional).
+        :param aws_region: The AWS region to connect to (optional).
         :return: A Boto3 client for the specified service.
         """
     config = Config(
@@ -654,18 +654,18 @@ def get_client(name, awsRegion=None):
             max_attempts = 30
         )
     )
-    if(awsRegion):
-        return boto3.client(name, region_name=awsRegion, config=config)
+    if(aws_region):
+        return boto3.client(name, region_name=aws_region, config=config)
     else:
         return boto3.client(name, config=config) 
 
 
-def get_resource(name, awsRegion=None):
+def get_resource(name, aws_region=None):
     """
         Creates a Boto3 resource for a specified AWS service.
 
         :param name: The name of the AWS service (e.g., 's3', 'dynamodb').
-        :param awsRegion: The AWS region to connect to (optional).
+        :param aws_region: The AWS region to connect to (optional).
         :return: A Boto3 resource for the specified service.
         """
     config = Config(
@@ -674,7 +674,7 @@ def get_resource(name, awsRegion=None):
         )
     )
 
-    if(awsRegion):
-        return boto3.resource(name, region_name=awsRegion, config=config)
+    if(aws_region):
+        return boto3.resource(name, region_name=aws_region, config=config)
     else:
         return boto3.resource(name, config=config)
