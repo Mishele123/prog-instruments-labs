@@ -1,7 +1,7 @@
-import boto3
 import json
 import os
 from urllib.parse import unquote
+import boto3
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from botocore.client import Config
 
@@ -24,7 +24,7 @@ def pdf_format(file):
     return (file.split('.')[0]+'.pdf')
 
 
-def lambda_handler(event, context):
+def lambda_handler(event):
     print('Received event is ', json.dumps(event, indent=2))
     # Set directory for preprocessing PDFs
     os.chdir('/tmp/')
@@ -78,7 +78,6 @@ def lambda_handler(event, context):
     }
 
 
-
 def get_client(name, awsRegion=None):
     config = Config(
         retries = dict(
@@ -89,7 +88,8 @@ def get_client(name, awsRegion=None):
         return boto3.client(name, region_name=awsRegion, config=config)
     else:
         return boto3.client(name, config=config) 
-            
+
+
 def get_resource(name, awsRegion=None):
     config = Config(
         retries = dict(
@@ -101,4 +101,3 @@ def get_resource(name, awsRegion=None):
         return boto3.resource(name, region_name=awsRegion, config=config)
     else:
         return boto3.resource(name, config=config)
-

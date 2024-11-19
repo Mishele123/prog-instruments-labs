@@ -11,15 +11,16 @@
  #  and limitations under the License.                                                                                #
  #####################################################################################################################
 
-import boto3
-import json
-import os
 import copy
-import logging
 import datetime
+import json
+import logging
+import os
 import traceback
-from botocore.exceptions import ClientError
+import boto3
 from botocore.client import Config
+from botocore.exceptions import ClientError
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -46,7 +47,8 @@ def lambda_handler(event):
         print("Full path of input file is {}/{}".format(request["bucketName"], request["objectName"]))
     
         process_request(request)
-        
+
+
 def get_job_results(jobId):
     texttract_client = get_client('textract', 'us-east-1')
     blocks = []
@@ -183,6 +185,7 @@ def find_value_block(key_block, value_map):
                 value_block = value_map[value_id]
     return value_block
 
+
 def get_text(result, blocks_map):
     text = ''
     if 'Relationships' in result:
@@ -197,6 +200,7 @@ def get_text(result, blocks_map):
                             text += 'X '    
                                 
     return text
+
 
 def find_key_value_inrange(response, top, bottom, thisPage) :
 # given Textract Response, and [top,bottom] - bounding box need to search for
@@ -243,6 +247,7 @@ def get_rows_columns_map(table_result, blocks_map):
                         rows[row_index] = {}
                     rows[row_index][col_index] = get_text(cell, blocks_map)
     return rows
+
 
 def get_tables_from_json_inrange(response, top, bottom, thisPage):
 #given respones and top/bottom corrdinate, return tables in the range
@@ -297,7 +302,8 @@ def get_tables_coord_inrange(response,top,bottom,thisPage):
         
         AllTables_coord.append(table_result['Geometry']['BoundingBox'])
     return AllTables_coord
-    
+
+
 def box_within_box(box1,box2):
 # check if bounding box1 is completely within bounding box2
 # box1:{Width,Height,Left,Top}
@@ -306,7 +312,8 @@ def box_within_box(box1,box2):
         return True 
     else:
         return False 
-    
+
+
 def find_Key_value_inrange_notInTable(response,top,bottom,thisPage) :
 # given Textract Response, and [top,bottom] - bounding box need to search for
 # find Key:value pairs within the bounding box 
@@ -517,6 +524,7 @@ def _write_to_dynamo_db(dd_table_name, Id, fullFilePath, fullPdfJson):
         logging.error(msg)
         raise Exception(e)
 
+
 def dict_to_item(raw):
     if type(raw) is dict:
         resp = {}
@@ -559,7 +567,8 @@ def get_client(name, awsRegion=None):
         return boto3.client(name, region_name=awsRegion, config=config)
     else:
         return boto3.client(name, config=config) 
-            
+
+
 def get_resource(name, awsRegion=None):
     config = Config(
         retries = dict(
