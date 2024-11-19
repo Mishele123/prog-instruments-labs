@@ -6,9 +6,6 @@ from PyPDF2 import PdfFileReader, PdfFileWriter
 from botocore.client import Config
 
 
-def pdf():
-    fin = open('input.pdf','rb')
-
 def pdfFormat(file):
     fin = open(file, 'rb')
     reader = PdfFileReader(fin)
@@ -36,7 +33,6 @@ def lambda_handler(event, context):
         # Extract keys from event
         bucket = record['s3']['bucket']['name']
         urlKey = record['s3']['object']['key']
-        reqId = record['responseElements']['x-amz-request-id']
         key = unquote(urlKey).replace('+',' ')
         key_list = key.split('/')
         # Define original directory in S3
@@ -51,7 +47,6 @@ def lambda_handler(event, context):
         # Format PDF for Textract
         new_file = pdfFormat(key.split('/')[-1])
         # upload new file to s3
-        s3upload = s3.upload_file(new_file,bucket,directories+new_file)
         # Start textract job with new file
         # client = getClient('textract')
         # response = client.start_document_analysis(

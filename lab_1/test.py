@@ -10,17 +10,11 @@
  #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
  #  and limitations under the License.                                                                                #
  #####################################################################################################################
- 
+
 import boto3
 import json
 import os
 import copy
-import pandas as pd
-import numpy as np
-import urllib.parse
-from urllib.parse import unquote
-from botocore.client import Config
-import time
 import logging
 import datetime
 import traceback
@@ -31,7 +25,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def lambda_handler(event, context):
+def lambda_handler(event):
 
     print("Received event: " + json.dumps(event))
     
@@ -53,7 +47,7 @@ def lambda_handler(event, context):
     
         processRequest(request)
         
-def getJobResults(api, jobId):
+def getJobResults(jobId):
     texttract_client = getClient('textract', 'us-east-1')
     blocks = []
     analysis = {}
@@ -82,31 +76,31 @@ def getJobResults(api, jobId):
         thisPage_json=parsejson_inorder_perpage(analysis,thisPage)
         finalJSON_allpage.append({'Page':thisPage,'Content':thisPage_json})
         print(f"Page {thisPage} parsed")
-    
+
     # blocks = []
     # analysis = {}
     # pages = []
     # thisPage = 1
     # finalJSON_allpage=[]
     # time.sleep(5)
-    
+
     # client = getClient('textract', 'us-east-1')
     # response = client.get_document_analysis(JobId=jobId)
     # analysis = copy.deepcopy(response)
-    
-    
+
+
     # pages.append(response)
     # print("Resultset page recieved: {}".format(len(pages)))
     # nextToken = None
     # if('NextToken' in response):
     #     nextToken = response['NextToken']
     #     print("Next token: {}".format(nextToken))
-        
+
     # thisPage_json=parsejson_inorder_perpage(response,thisPage)
-            
+
     # finalJSON_allpage.append({'Page':thisPage,'Content':thisPage_json})
     # print("Page {} json is {}".format(thisPage, response))
-    
+
     # while(nextToken):
     #     try:
     #         time.sleep(5)
@@ -118,21 +112,21 @@ def getJobResults(api, jobId):
     #         if('NextToken' in response):
     #             nextToken = response['NextToken']
     #             print("Next token: {}".format(nextToken))
-                
+
     #         thisPage=thisPage+1
-    
+
     #         thisPage_json=parsejson_inorder_perpage(response,thisPage)
-            
+
     #         finalJSON_allpage.append({'Page':thisPage,'Content':thisPage_json})
     #         print("Page {} json is {}".format(thisPage, response))
-            
+
     #     except Exception as e:
     #         if(e.__class__.__name__ == 'ProvisionedThroughputExceededException'):
     #             print("ProvisionedThroughputExceededException.")
     #             print("Waiting for few seconds...")
     #             time.sleep(5)
     #             print("Waking up...")
-                
+
     # print('The resulting json is {}'.format(finalJSON_allpage))
 
     return finalJSON_allpage
@@ -141,14 +135,10 @@ def getJobResults(api, jobId):
 def processRequest(request):
     
     s3_client = getClient('s3', 'us-east-1')
-    
-    output = ""
 
     print("Request : {}".format(request))
 
     jobId = request['jobId']
-    documentId = request['jobTag']
-    jobStatus = request['jobStatus']
     jobAPI = request['jobAPI']
     bucketName = request['bucketName']
     outputBucketName = request['outputBucketName']
@@ -365,7 +355,6 @@ def parsejson_inorder_perpage(response,thisPage):
 # input: response - multipage Textract response JSON
 #        thisPage - page number : 1,2,3.. 
 # output: clean parsed JSON for this Page in correct order 
-        TextList=[]
         ID_list_KV_Table=[]
         for block in response['Blocks']:
             if block['Page'] == thisPage:
@@ -439,8 +428,7 @@ def _writeToDynamoDB(dd_table_name, Id, fullFilePath, fullPdfJson):
 
     # Get the service resource.
     dynamodb = getResource('dynamodb')
-    dynamodb_client = getClient('dynamodb')
-    
+
     dd_table_name = dd_table_name \
                     .replace(" ", "-") \
                     .replace("(", "-") \
