@@ -45,10 +45,10 @@ def lambda_handler(event):
         
         print("Full path of input file is {}/{}".format(request["bucketName"], request["objectName"]))
     
-        processRequest(request)
+        process_request(request)
         
-def getJobResults(jobId):
-    texttract_client = getClient('textract', 'us-east-1')
+def get_job_results(jobId):
+    texttract_client = get_client('textract', 'us-east-1')
     blocks = []
     analysis = {}
     response = texttract_client.get_document_analysis(
@@ -132,9 +132,9 @@ def getJobResults(jobId):
     return finalJSON_allpage
     
     
-def processRequest(request):
+def process_request(request):
     
-    s3_client = getClient('s3', 'us-east-1')
+    s3_client = get_client('s3', 'us-east-1')
 
     print("Request : {}".format(request))
 
@@ -158,7 +158,7 @@ def processRequest(request):
     
     upload_path = upload_path + file_name_no_ext + '/textract/'
     
-    finalJSON_allpage = getJobResults(jobAPI, jobId)
+    finalJSON_allpage = get_job_results(jobAPI, jobId)
     
     analyses_bucket_name = outputBucketName
     analyses_bucket_key = "{}".format(objectName.replace('.PDF', '.json'))
@@ -168,7 +168,7 @@ def processRequest(request):
         Body=json.dumps(finalJSON_allpage).encode('utf-8')
     )
     
-    _writeToDynamoDB("pdf-to-json", objectName, bucketName + '/' + objectName, finalJSON_allpage)
+    _write_to_dynamo_db("pdf-to-json", objectName, bucketName + '/' + objectName, finalJSON_allpage)
     
     return {
         'statusCode': 200,
@@ -198,7 +198,7 @@ def get_text(result, blocks_map):
                                 
     return text
 
-def find_Key_value_inrange(response,top,bottom,thisPage) :
+def find_key_value_inrange(response, top, bottom, thisPage) :
 # given Textract Response, and [top,bottom] - bounding box need to search for
 # find Key:value pairs within the bounding box 
 
@@ -244,7 +244,7 @@ def get_rows_columns_map(table_result, blocks_map):
                     rows[row_index][col_index] = get_text(cell, blocks_map)
     return rows
 
-def get_tables_fromJSON_inrange(response,top,bottom,thisPage):  
+def get_tables_from_json_inrange(response, top, bottom, thisPage):
 #given respones and top/bottom corrdinate, return tables in the range
     blocks=response['Blocks']
     blocks_map = {}
@@ -407,8 +407,8 @@ def parsejson_inorder_perpage(response,thisPage):
             thisTop=TextList[i]['Top']
             thisBottom=TextList[i+1]['Top']+TextList[i+1]['Height']
  #           thisText_KV=find_Key_value_inrange_notInTable(response,thisTop,thisBottom,thisPage)
-            thisText_KV=find_Key_value_inrange(response,thisTop,thisBottom,thisPage)
-            thisText_Table=get_tables_fromJSON_inrange(response,thisTop,thisBottom,thisPage)
+            thisText_KV=find_key_value_inrange(response, thisTop, thisBottom, thisPage)
+            thisText_Table=get_tables_from_json_inrange(response, thisTop, thisBottom, thisPage)
             finalJSON.append({thisText:{'KeyValue':thisText_KV,'Tables':thisText_Table}})
 
         if (len(TextList) > 0):
@@ -417,17 +417,17 @@ def parsejson_inorder_perpage(response,thisPage):
             lastTop=TextList[len(TextList)-1]['Top']
             lastBottom=1
      #       thisText_KV=find_Key_value_inrange_notInTable(response,lastTop,lastBottom,thisPage)
-            thisText_KV=find_Key_value_inrange(response,lastTop,lastBottom,thisPage)
-            thisText_Table=get_tables_fromJSON_inrange(response,lastTop,lastBottom,thisPage)
+            thisText_KV=find_key_value_inrange(response, lastTop, lastBottom, thisPage)
+            thisText_Table=get_tables_from_json_inrange(response, lastTop, lastBottom, thisPage)
             finalJSON.append({lastText:{'KeyValue':thisText_KV,'Tables':thisText_Table}})
 
         return finalJSON
 
 
-def _writeToDynamoDB(dd_table_name, Id, fullFilePath, fullPdfJson):
+def _write_to_dynamo_db(dd_table_name, Id, fullFilePath, fullPdfJson):
 
     # Get the service resource.
-    dynamodb = getResource('dynamodb')
+    dynamodb = get_resource('dynamodb')
 
     dd_table_name = dd_table_name \
                     .replace(" ", "-") \
@@ -549,7 +549,7 @@ def dict_to_item(raw):
         }
 
            
-def getClient(name, awsRegion=None):
+def get_client(name, awsRegion=None):
     config = Config(
         retries = dict(
             max_attempts = 30
@@ -560,7 +560,7 @@ def getClient(name, awsRegion=None):
     else:
         return boto3.client(name, config=config) 
             
-def getResource(name, awsRegion=None):
+def get_resource(name, awsRegion=None):
     config = Config(
         retries = dict(
             max_attempts = 30

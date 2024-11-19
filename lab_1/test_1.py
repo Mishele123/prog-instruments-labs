@@ -6,7 +6,7 @@ from PyPDF2 import PdfFileReader, PdfFileWriter
 from botocore.client import Config
 
 
-def pdfFormat(file):
+def pdf_format(file):
     fin = open(file, 'rb')
     reader = PdfFileReader(fin)
     writer = PdfFileWriter()
@@ -45,7 +45,7 @@ def lambda_handler(event, context):
         # Download s3 pdf file that triggered Lambda
         s3.download_file(bucket, key, key.split('/')[-1])
         # Format PDF for Textract
-        new_file = pdfFormat(key.split('/')[-1])
+        new_file = pdf_format(key.split('/')[-1])
         # upload new file to s3
         # Start textract job with new file
         # client = getClient('textract')
@@ -79,7 +79,7 @@ def lambda_handler(event, context):
 
 
 
-def getClient(name, awsRegion=None):
+def get_client(name, awsRegion=None):
     config = Config(
         retries = dict(
             max_attempts = 30
@@ -90,7 +90,7 @@ def getClient(name, awsRegion=None):
     else:
         return boto3.client(name, config=config) 
             
-def getResource(name, awsRegion=None):
+def get_resource(name, awsRegion=None):
     config = Config(
         retries = dict(
             max_attempts = 30
