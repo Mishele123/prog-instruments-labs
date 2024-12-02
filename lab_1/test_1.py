@@ -57,32 +57,6 @@ def lambda_handler(event):
         s3.download_file(bucket, key, key.split("/")[-1])
         # Format PDF for Textract
         new_file = pdf_format(key.split("/")[-1])
-        # upload new file to s3
-        # Start textract job with new file
-        # client = getClient('textract')
-        # response = client.start_document_analysis(
-        #     DocumentLocation={
-        #         'S3Object': {
-        #             'Bucket': bucket,
-        #             'Name': directories+new_file
-        #         }
-        #     },
-        #     FeatureTypes=[
-        #         'TABLES','FORMS'
-        #     ],
-        #     # ClientRequestToken=reqId,
-        #     JobTag='HPtextract',
-        #     NotificationChannel={
-        #         'SNSTopicArn': SNS_TOPIC,
-        #         'RoleArn': SNS_ROLE
-        #     },
-        #     OutputConfig={
-        #         'S3Bucket': OUTPUT_BUCKET,
-        #         'S3Prefix': key.split('.')[0]
-        #     }
-        # )
-        # print(response)
-
     return {"statusCode": 200, "body": "Successfully converted the file "
                                        + new_file}
 

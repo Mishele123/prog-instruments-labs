@@ -90,59 +90,6 @@ def get_job_results(jobId):
         this_page_json=parsejson_inorder_perpage(analysis,this_page)
         final_json_allpage.append({'Page':this_page,'Content':this_page_json})
         print(f"Page {this_page} parsed")
-
-    # blocks = []
-    # analysis = {}
-    # pages = []
-    # thisPage = 1
-    # finalJSON_allpage=[]
-    # time.sleep(5)
-
-    # client = getClient('textract', 'us-east-1')
-    # response = client.get_document_analysis(JobId=jobId)
-    # analysis = copy.deepcopy(response)
-
-
-    # pages.append(response)
-    # print("Resultset page recieved: {}".format(len(pages)))
-    # nextToken = None
-    # if('NextToken' in response):
-    #     nextToken = response['NextToken']
-    #     print("Next token: {}".format(nextToken))
-
-    # thisPage_json=parsejson_inorder_perpage(response,thisPage)
-
-    # finalJSON_allpage.append({'Page':thisPage,'Content':thisPage_json})
-    # print("Page {} json is {}".format(thisPage, response))
-
-    # while(nextToken):
-    #     try:
-    #         time.sleep(5)
-    #         response = client.get_document_analysis(JobId=jobId, NextToken=nextToken)
-
-    #         pages.append(response)
-    #         print("Resultset page recieved: {}".format(response))
-    #         nextToken = None
-    #         if('NextToken' in response):
-    #             nextToken = response['NextToken']
-    #             print("Next token: {}".format(nextToken))
-
-    #         thisPage=thisPage+1
-
-    #         thisPage_json=parsejson_inorder_perpage(response,thisPage)
-
-    #         finalJSON_allpage.append({'Page':thisPage,'Content':thisPage_json})
-    #         print("Page {} json is {}".format(thisPage, response))
-
-    #     except Exception as e:
-    #         if(e.__class__.__name__ == 'ProvisionedThroughputExceededException'):
-    #             print("ProvisionedThroughputExceededException.")
-    #             print("Waiting for few seconds...")
-    #             time.sleep(5)
-    #             print("Waking up...")
-
-    # print('The resulting json is {}'.format(finalJSON_allpage))
-
     return final_json_allpage
     
     
@@ -486,14 +433,12 @@ def parsejson_inorder_perpage(response,thisPage):
                     set_line_id=set(thisline_idlist)
                     set_all_kv_table_id=set(id_list_kv_table)
                     if len(set_line_id.intersection(set_all_kv_table_id)) == 0:
-             #           print(block['Text'])
                         this_dict={'Line':block['Text'],
                                   'Left':block['Geometry']['BoundingBox']['Left'],
                                   'Top':block['Geometry']['BoundingBox']['Top'],
                                   'Width':block['Geometry']['BoundingBox']['Width'],
                                   'Height':block['Geometry']['BoundingBox']
                                   ['Height']}
-             #           print(thisDict)
                         text_list.append(this_dict)
 
         final_json=[]
@@ -501,7 +446,6 @@ def parsejson_inorder_perpage(response,thisPage):
             this_text=text_list[i]['Line']
             this_top=text_list[i]['Top']
             this_bottom=text_list[i+1]['Top']+text_list[i+1]['Height']
- #           thisText_KV=find_Key_value_inrange_notInTable(response,thisTop,thisBottom,thisPage)
             this_text_kv=find_key_value_inrange(response, this_top,
                                                 this_bottom, thisPage)
             this_text_table=get_tables_from_json_inrange(response,
@@ -514,7 +458,6 @@ def parsejson_inorder_perpage(response,thisPage):
             last_text=text_list[len(text_list)-1]['Line']
             last_top=text_list[len(text_list)-1]['Top']
             last_bottom=1
-     #       thisText_KV=find_Key_value_inrange_notInTable(response,lastTop,lastBottom,thisPage)
             this_text_kv=find_key_value_inrange(response, last_top,
                                                 last_bottom, thisPage)
             this_text_table=get_tables_from_json_inrange(response,
@@ -559,7 +502,6 @@ def _write_to_dynamo_db(dd_table_name, id, full_file_path, full_pdf_json):
         
         existing_tables = list([x.name for x in dynamodb.tables.all()])
 
-        # existing_tables = dynamodb_client.list_tables()['TableNames']
 
         if dd_table_name not in existing_tables:
             table = dynamodb.create_table(
