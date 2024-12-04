@@ -52,8 +52,6 @@ def get_invalid_rows(rows: List[str]) -> List[str]:
 
 if __name__ == "__main__":
     data = load_cvs_data(CSV_FILE)
-    print(data)
     invalid_rows = get_invalid_rows(data)
-    print(invalid_rows)
     checksum_result = calculate_checksum(invalid_rows)
-    serialize_result(VAR, checksum_result)
+    serialize_result(VAR, checksum_result, JSON_FILE)
