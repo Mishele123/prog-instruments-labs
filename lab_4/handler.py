@@ -2,31 +2,39 @@ import os
 import random
 import csv
 import shutil
+import logging
 
 from PyQt6 import QtWidgets
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QWidget
 
 
-def create_dataset(main_window: QWidget) -> None:
+logging.basicConfig(level = logging.DEBUG, 
+                    format = "%(asctime)s - %(levelname)s - %(message)s",
+                    handlers = [
+                        logging.FileHandler("logging.log"),
+                        logging.StreamHandler()
+                    ])
 
+
+def create_dataset(main_window: QWidget) -> None:
     select_folder = main_window.select_folder
     folderpath = QtWidgets.QFileDialog.getExistingDirectory(
         main_window, "Выберите папку")
-    print(f"Вы выбрали: {folderpath}")
+    logging.info(f"Вы выбрали: {folderpath}")
     main_window.next_folder = folderpath
 
     new_folder_path = main_window.next_folder
 
-    print("Создание файла аннотации исходного датасета")
     annotation_file = "annotation.csv"
 
-    print(select_folder)
-    print(new_folder_path)
+    logging.info("Создание файла аннотации данного датасета")
 
-    annotation_file = "annotation.csv"
+    if os.path.exists(select_folder):
+        logging.error("Исходная папка не найдена")
+        return None
 
-    print(new_folder_path + "/" + annotation_file)
+    logging.info(f"Создание аннотации в папке: {new_folder_path}/{annotation_file}")
 
     with open(new_folder_path + "/" + annotation_file, "w", newline="",
                encoding="utf-8") as csv_file:
@@ -34,8 +42,8 @@ def create_dataset(main_window: QWidget) -> None:
 
         for folder in os.listdir(select_folder):
             if folder != "tiger" and folder != "leopard":
-                print("Не правильная папка")
-                return None
+                logging.warning(f"Не правильная папка: {select_folder}")
+                continue
 
             path_folder = os.path.join(select_folder, folder)
 
@@ -47,25 +55,19 @@ def create_dataset(main_window: QWidget) -> None:
                 relative_path = os.path.relpath(img_path, select_folder)
 
                 csv_writer.writerow([absolute_path, relative_path, folder])
-
-    print("Файл создался")
+                logging.info(f"Добавлено изображение: {relative_path}")
+    logging.info("Файл аннотации создан")
 
 
 def on_clicked_button(main_windows: QWidget) -> str:
     folderpath = QtWidgets.QFileDialog.getExistingDirectory(
         main_windows, "Выберите папку")
-    print(f"Вы выбрали: {folderpath}")
+    logging.info(f"Вы выбрали: {folderpath}")
     main_windows.select_folder = folderpath
 
 
 def on_clicked_button_for_dataset(main_window: QWidget) -> None:
-    print(main_window.select_folder)
-    folderpath = QtWidgets.QFileDialog.getExistingDirectory(
-        main_window, "Выберите папку")
-    print(f"Вы выбрали: {folderpath}")
-    main_window.next_folder = folderpath
-    print(main_window.next_folder)
-
+    logging.info("Начало создание датасета")
     create_dataset(main_window.select_folder, main_window.next_folder)
 
 
@@ -73,7 +75,7 @@ def copy_dataset_with_random(main_window: QWidget) -> None:
     source_dataset = main_window.select_folder
     folderpath = QtWidgets.QFileDialog.getExistingDirectory(
         main_window, "Выберите папку")
-    print(f"Вы выбрали: {folderpath}")
+    logging.info(f"Вы выбрали: {folderpath}")
     main_window.next_folder = folderpath
 
     target_dataset = main_window.next_folder
@@ -87,7 +89,8 @@ def copy_dataset_with_random(main_window: QWidget) -> None:
         for folder in os.listdir(source_dataset):
             path_folder = os.path.join(source_dataset, folder)
 
-            print(len(os.listdir(path_folder)))
+            logging.info(f"Копирование файлов из папки: {folder}")
+
             for img in os.listdir(path_folder):
                 img_path = os.path.join(path_folder, img)
 
@@ -103,8 +106,9 @@ def copy_dataset_with_random(main_window: QWidget) -> None:
                     target_img_path, target_dataset)
 
                 csv_writer.writerow([absolute_path, relative_path, folder])
+                logging.info(f"Скопировано изображение: {relative_path}")
 
-    print("Датасет скопировался")
+    logging.info("Датасет скопировался")
 
 
 class Iterator:
@@ -117,11 +121,12 @@ class Iterator:
 
     def get_instances(self) -> list:
         if not os.path.exists(self.class_path):
-            print(f"Папка {self.class_label} не найдена.")
+            logging.error(f"Папка {self.class_label} не найдена.")
             return None
 
         instances = os.listdir(self.class_path)
         random.shuffle(instances)
+        logging.debug(f"Получены экземпляры для {self.class_label}: {instances}")
         return instances
 
     def __iter__(self):
@@ -129,27 +134,19 @@ class Iterator:
 
     def __next__(self) -> str:
         if not self.instances:
+            logging.debug("Экземпляры закончились.")
             raise StopIteration("Экземпляры закончились.")
         return os.path.join(self.class_path, self.instances.pop(0))
 
 
-def next_tiger(main_window: QWidget) -> None:
-    class_label = "tiger"
+def next_animal(main_window: QWidget, class_label: str) -> None:
     manager = Iterator(class_label, main_window.select_folder)
-
-    image_path = manager.__next__()
-    if image_path:
+    logging.debug(f"Попытка получить следующее изображение для: {class_label}.")
+    try:
+        image_path = manager.__next__()
+        logging.debug(f"Получен путь к изображению: {image_path}.")
         main_window.current_image = QPixmap(image_path)
-        main_window.label.setPixmap(
-            main_window.current_image.scaled(400, 400))
-
-
-def next_leopard(main_window: QWidget) -> None:
-    class_label = "leopard"
-    manager = Iterator(class_label, main_window.select_folder)
-
-    image_path = manager.__next__()
-    if image_path:
-        main_window.current_image = QPixmap(image_path)
-        main_window.label.setPixmap(
-            main_window.current_image.scaled(400, 400))
+        main_window.label.setPixmap(main_window.current_image.scaled(400, 400))
+        logging.info(f"Показано следующее изображение: {class_label}.")
+    except StopIteration:
+        logging.warning(f"Нет доступных изображений для: {class_label}.")
