@@ -41,4 +41,12 @@ def test_update_user():
     assert service.users[0].email == "john_new@example.com"
 
 
+@pytest.mark.parametrize("username, expected", [
+    ("john_doe", True),
+    ("jane_doe", False),
+])
+def test_is_username_taken(username, expected):
+    service = UserService("test_users.json")
+    service.users = [User(1, "john_doe", "john@example.com")]
 
+    assert service.is_username_taken(username) == expected
