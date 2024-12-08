@@ -61,3 +61,19 @@ def test_load_users_with_mock():
         
         assert len(service.users) == 1
         assert service.users[0].username == "john_doe"
+
+
+def test_remove_nonexistent_user():
+    service = UserService("test_users.json")
+    service.users = [User(1, "john_doe", "john@example.com")]
+
+    with pytest.raises(ValueError, match = "Пользователь с id: 2 не найден."):
+        service.remove_user(2)
+
+
+def test_update_nonexistent_user():
+    service = UserService("test_users.json")
+    service.users = [User(1, "john_doe", "john@example.com")]
+
+    with pytest.raises(ValueError, match = "Пользователь с ID: 2 не найден."):
+        service.update_user(2, email = "john_new@example.com")
