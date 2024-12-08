@@ -1,5 +1,6 @@
 import pytest
 
+from unittest.mock import patch, mock_open
 from main import User, UserService
 
 
@@ -50,3 +51,13 @@ def test_is_username_taken(username, expected):
     service.users = [User(1, "john_doe", "john@example.com")]
 
     assert service.is_username_taken(username) == expected
+
+
+def test_load_users_with_mock():
+    mock_data = '[{"user_id": 1, "username": "john_doe", "email": "john@example.com"}]'
+    
+    with patch("builtins.open", mock_open(read_data = mock_data)):
+        service = UserService("test_users.json")
+        
+        assert len(service.users) == 1
+        assert service.users[0].username == "john_doe"
